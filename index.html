@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>유튜브 API 플레이어</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .video-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: #000;
+        }
+        
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .video-title {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .controls button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .controls button:active {
+            transform: translateY(0);
+        }
+        
+        .input-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .playlist {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .playlist-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .playlist-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        .playlist-item.active {
+            background: #667eea;
+            color: white;
+            border-color: #764ba2;
+        }
+        
+        .playlist-item h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .playlist-item p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .info {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .info code {
+            background: #e0e7ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 유튜브 API 플레이어</h1>
+        
+        <div class="video-section">
+            <h2 class="video-title">동영상 플레이어</h2>
+            <div class="video-wrapper">
+                <div id="player"></div>
+            </div>
+            <div class="controls">
+                <button onclick="playVideo()">▶️ 재생</button>
+                <button onclick="pauseVideo()">⏸️ 일시정지</button>
+                <button onclick="stopVideo()">⏹️ 정지</button>
+                <button onclick="muteVideo()">🔇 음소거</button>
+                <button onclick="unmuteVideo()">🔊 음소거 해제</button>
+            </div>
+            <div class="status" id="status">플레이어 준비 중...</div>
+        </div>
+        
+        <div class="input-section">
+            <h2 class="video-title">다이나믹 듀오 플레이리스트</h2>
+            <div class="playlist">
+                <div class="playlist-item" onclick="loadVideoById('C7bexzrBIp4')">
+                    <h3>🎵 AEAO</h3>
+                    <p>feat. DJ Premier</p>
+                </div>
+                <div class="playlist-item" onclick="loadVideoById('tLUGSc0E-n4')">
+                    <h3>🌞 Summer Time</h3>
+                    <p>여름 감성 힙합</p>
+                </div>
+                <div class="playlist-item" onclick="loadVideoById('9vIAr-KH8Ds')">
+                    <h3>💔 죽일 놈</h3>
+                    <p>feat. 박정현</p>
+                </div>
+                <div class="playlist-item" onclick="loadVideoById('ehf_5oBJR2I')">
+                    <h3>✅ 출첵</h3>
+                    <p>클래식 힙합</p>
+                </div>
+                <div class="playlist-item" onclick="loadVideoById('mI7xiQvvMaU')">
+                    <h3>🔔 Ring My Bell</h3>
+                    <p>인기곡</p>
+                </div>
+                <div class="playlist-item" onclick="loadVideoById('DmAHmYsUtH0')">
+                    <h3>💥 BAAAM</h3>
+                    <p>feat. Muzie of UV</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <h2 class="video-title">직접 영상 선택하기</h2>
+            <div class="input-group">
+                <label>유튜브 영상 URL 또는 Video ID:</label>
+                <input 
+                    type="text" 
+                    id="videoInput" 
+                    placeholder="예: https://www.youtube.com/watch?v=dQw4w9WgXcQ 또는 dQw4w9WgXcQ"
+                >
+            </div>
+            <button onclick="loadCustomVideo()">영상 불러오기</button>
+            
+            <div class="info">
+                <strong>✨ 유튜브 API 플레이어의 장점:</strong><br>
+                • 더 나은 호환성과 안정성<br>
+                • 재생, 일시정지 등 완전한 제어<br>
+                • 음소거, 볼륨 조절 가능<br>
+                • 플레이리스트 관리 용이<br><br>
+                
+                <strong>📝 사용 팁:</strong><br>
+                • 위의 다이나믹 듀오 플레이리스트를 클릭해보세요<br>
+                • 또는 직접 Video ID를 입력하세요<br>
+                • 컨트롤 버튼으로 영상을 제어할 수 있습니다
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let player;
+        let currentVideoId = 'C7bexzrBIp4'; // 기본 영상: AEAO
+        
+        // 유튜브 IFrame API 로드
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // API가 준비되면 자동으로 호출됨
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: currentVideoId,
+                playerVars: {
+                    'playsinline': 1,
+                    'modestbranding': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+        
+        function onPlayerReady(e) {
+            updateStatus('플레이어 준비 완료! 재생 버튼을 누르거나 플레이리스트를 선택하세요.');
+        }
+        
+        function onPlayerStateChange(e) {
+            const states = {
+                '-1': '시작 안됨',
+                '0': '종료됨',
+                '1': '재생 중',
+                '2': '일시정지됨',
+                '3': '버퍼링 중',
+                '5': '동영상 준비됨'
+            };
+            updateStatus(states[e.data] || '알 수 없는 상태');
+        }
+        
+        function onPlayerError(e) {
+            const errors = {
+                '2': '잘못된 Video ID입니다.',
+                '5': '재생 오류가 발생했습니다.',
+                '100': '이 영상을 찾을 수 없습니다.',
+                '101': '이 영상은 임베드가 차단되어 있습니다.',
+                '150': '이 영상은 임베드가 차단되어 있습니다.'
+            };
+            updateStatus('❌ ' + (errors[e.data] || '알 수 없는 오류'));
+            
+            if (e.data == 101 || e.data == 150) {
+                setTimeout(() => {
+                    if (confirm('이 영상은 임베드가 차단되어 있습니다. 유튜브에서 직접 여시겠습니까?')) {
+                        window.open(`https://www.youtube.com/watch?v=${currentVideoId}`, '_blank');
+                    }
+                }, 500);
+            }
+        }
+        
+        function updateStatus(msg) {
+            document.getElementById('status').textContent = msg;
+        }
+        
+        function playVideo() {
+            if (player && player.playVideo) {
+                player.playVideo();
+            }
+        }
+        
+        function pauseVideo() {
+            if (player && player.pauseVideo) {
+                player.pauseVideo();
+            }
+        }
+        
+        function stopVideo() {
+            if (player && player.stopVideo) {
+                player.stopVideo();
+            }
+        }
+        
+        function muteVideo() {
+            if (player && player.mute) {
+                player.mute();
+                updateStatus('음소거됨');
+            }
+        }
+        
+        function unmuteVideo() {
+            if (player && player.unMute) {
+                player.unMute();
+                updateStatus('음소거 해제됨');
+            }
+        }
+        
+        function loadVideoById(videoId) {
+            if (player && player.loadVideoById) {
+                currentVideoId = videoId;
+                player.loadVideoById(videoId);
+                updateStatus('영상 로딩 중...');
+                
+                // 플레이리스트 아이템 활성화 표시
+                document.querySelectorAll('.playlist-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                event.target.closest('.playlist-item').classList.add('active');
+            }
+        }
+        
+        function loadCustomVideo() {
+            const input = document.getElementById('videoInput').value.trim();
+            
+            if (!input) {
+                alert('유튜브 URL 또는 Video ID를 입력해주세요!');
+                return;
+            }
+            
+            let videoId = extractVideoId(input);
+            
+            if (videoId) {
+                loadVideoById(videoId);
+            } else {
+                alert('올바른 유튜브 URL 또는 Video ID를 입력해주세요!');
+            }
+        }
+        
+        function extractVideoId(input) {
+            // Video ID만 입력한 경우
+            if (input.length === 11 && !input.includes('/') && !input.includes('=')) {
+                return input;
+            }
+            
+            // 전체 URL에서 Video ID 추출
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+                /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+                /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/
+            ];
+            
+            for (let pattern of patterns) {
+                const match = input.match(pattern);
+                if (match) {
+                    return match[1];
+                }
+            }
+            
+            return null;
+        }
+        
+        // Enter 키로도 영상 로드 가능
+        document.getElementById('videoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadCustomVideo();
+            }
+        });
+    </script>
+</body>
+</html>
